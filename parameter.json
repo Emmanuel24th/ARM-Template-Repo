@@ -1,0 +1,30 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "Enter name of VM": {
+        "value": "vmachine@2404"
+      },
+      "Enter name of Publicip": {
+        "value": "vm24ip"
+      },
+      "Enter name of NSG": {
+        "value": "vm24nsg"
+      },
+      "Enter name of Vnet": {
+        "value": "vm24vnet"
+      },
+      "Enter name of Network Inteface": {
+        "value": "vm24netint"
+      },
+      "Enter name of subnet": {
+        "value": "vm24subnet"
+      },
+      "Enter OS disc name": {
+        "value": "vm24osd"
+      },
+      "Enter storage account name ": {
+        "value": "vm24storage"
+      }
+    }
+  }

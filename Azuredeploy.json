@@ -1,0 +1,217 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "Enter name of VM": {
+            "type": "string",
+            "metadata": {
+                "description": "input VM name value"
+            }
+        },
+        "Enter name of Publicip": {
+            "type": "string",
+            "metadata": {
+                "description": "input public ip value"
+            }
+        },
+        "Enter name of NSG": {
+            "type": "string",
+            "metadata": {
+                "description": "input name of NSG"
+            }
+        },
+        "Enter name of Vnet": {
+            "type": "string",
+            "metadata": {
+                "description": "input name of Vnet"
+            }
+        },
+        "Enter name of Network Inteface": {
+            "type": "string",
+            "metadata": {
+                "description": "input network interface name"
+            }
+        },
+        "Enter name of subnet": {
+            "type": "string",
+            "metadata": {
+                "description": "input subnet name"
+            }
+        },
+        "Enter OS disc name": {
+            "type": "string",
+            "metadata": {
+                "description": "input OS disc value"
+            }
+        },
+        "Enter storage account name ": {
+            "type": "string",
+            "metadata": {
+                "description": "Input storage acct value"
+            }
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "name": "[parameters('Enter name of VM')]",
+            "type": "Microsoft.Storage/storageAccounts",
+            "apiVersion": "2023-01-01",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "displayName": "[parameters('Enter name of VM')]"
+            },
+            "sku": {
+                "name": "Standard_LRS"
+            },
+            "kind": "Storage"
+        },
+        {
+            "name": "[parameters('Enter name of Publicip')]",
+            "type": "Microsoft.Network/publicIPAddresses",
+            "apiVersion": "2023-04-01",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "displayName": "[parameters('Enter name of Publicip')]"
+            },
+            "properties": {
+                "publicIPAllocationMethod": "Dynamic",
+                "dnsSettings": {
+                    "domainNameLabel": "[parameters('Enter name of VM')]"
+                }
+            }
+        },
+        {
+            "name": "[parameters('Enter name of NSG')]",
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "apiVersion": "2023-04-01",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "[parameters('Enter name of NSG')]",
+                        "properties": {
+                            "description": "description",
+                            "protocol": "Tcp",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "22",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 100,
+                            "direction": "Inbound"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "[parameters('Enter name of Vnet')]",
+            "type": "Microsoft.Network/virtualNetworks",
+            "apiVersion": "2023-04-01",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('Enter name of NSG'))]"
+            ],
+            "tags": {
+                "displayName": "[parameters('Enter name of Vnet')]"
+            },
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "10.0.0.0/16"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "[parameters('Enter name of Vnet')]",
+                        "properties": {
+                            "addressPrefix": "10.0.0.0/24",
+                            "networkSecurityGroup": {
+                                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('Enter name of NSG'))]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "[parameters('Enter name of Network Inteface')]",
+            "type": "Microsoft.Network/networkInterfaces",
+            "apiVersion": "2023-04-01",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/publicIPAddresses', parameters('Enter name of Publicip'))]",
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('Enter name of Vnet'))]"
+            ],
+            "tags": {
+                "displayName": "[parameters('Enter name of Network Inteface')]"
+            },
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipConfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('Enter name of Publicip'))]"
+                            },
+                            "subnet": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('Enter name of Vnet'), parameters('Enter name of subnet'))]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "[parameters('Enter name of VM')]",
+            "type": "Microsoft.Compute/virtualMachines",
+            "apiVersion": "2023-03-01",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkInterfaces', parameters('Enter name of Network Inteface'))]"
+            ],
+            "tags": {
+                "displayName": "[parameters('Enter name of VM')]"
+            },
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "Standard_A2_v2"
+                },
+                "osProfile": {
+                    "computerName": "[parameters('Enter name of VM')]",
+                    "adminUsername": "EmmanuelVM",
+                    "adminPassword": "adminPassword22"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "Canonical",
+                        "offer": "UbuntuServer",
+                        "sku": "16.04-LTS",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "name": "[parameters('Enter OS disc name')]",
+                        "caching": "ReadWrite",
+                        "createOption": "FromImage"
+                    }
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('Enter name of Network Inteface'))]"
+                        }
+                    ]
+                },
+                "diagnosticsProfile": {
+                    "bootDiagnostics": {
+                        "enabled": true,
+                        "storageUri": "[reference(resourceId('Microsoft.Storage/storageAccounts/', parameters('Enter storage account name '))).primaryEndpoints.blob]"
+                    }
+                }
+            }
+        }
+    ],
+    "outputs": {}
+}
